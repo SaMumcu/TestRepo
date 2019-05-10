@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "541192793817",
+    "firebase_url": "https://gallery01-f8952.firebaseio.com",
+    "project_id": "gallery01-f8952",
+    "storage_bucket": "gallery01-f8952.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:541192793817:android:2df52654a44c185a",
+        "android_client_info": {
+          "package_name": "com.gradientinsight.gallery01"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "541192793817-pcpuh0i9ee7pvbsckr6stborvema519v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBpv8S_oAyjnVTs2k6tK7it5Iu9c0RhK2Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "541192793817-pcpuh0i9ee7pvbsckr6stborvema519v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">GalleryViewer</string>
+    <string name="loader_text">Loading...</string>
+    <string name="action_search">Search Images By TAG</string>
+</resources>
