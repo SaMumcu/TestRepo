@@ -24,7 +24,9 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.gradientinsight.gallery01.R;
+import com.gradientinsight.gallery01.dialogs.CustomDeleteDialog;
 import com.gradientinsight.gallery01.entities.Photo;
+import com.gradientinsight.gallery01.interfaces.CustomListener;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -94,36 +96,66 @@ public class ImagePreviewActivity extends AppCompatActivity {
         delete.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                AlertDialog alertDialog = new AlertDialog.Builder(ImagePreviewActivity.this)
-                        .setMessage("Do you want to delete Image ?")
-                        .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                File file = new File(photo.getFile());
-                                if (file.exists()) {
-                                    if (!file.canWrite()) {
-                                        performFileSearch(file.getPath());
-                                    } else {
-                                        file.delete();
-                                        MediaScannerConnection.scanFile(ImagePreviewActivity.this, new String[]{photo.getFile()},
-                                                null, new MediaScannerConnection.OnScanCompletedListener() {
-                                                    public void onScanCompleted(String path, Uri uri) {
-                                                        Intent resultIntent = new Intent();
-                                                        resultIntent.putExtra("position", position);
-                                                        setResult(Activity.RESULT_OK, resultIntent);
-                                                        finish();
-                                                    }
-                                                });
-                                    }
-                                }
-                                dialog.dismiss();
+//                AlertDialog alertDialog = new AlertDialog.Builder(ImagePreviewActivity.this)
+//                        .setMessage("Do you want to delete Image ?")
+//                        .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+//                            public void onClick(DialogInterface dialog, int whichButton) {
+//                                File file = new File(photo.getFile());
+//                                if (file.exists()) {
+//                                    if (!file.canWrite()) {
+//                                        performFileSearch(file.getPath());
+//                                    } else {
+//                                        file.delete();
+//                                        MediaScannerConnection.scanFile(ImagePreviewActivity.this, new String[]{photo.getFile()},
+//                                                null, new MediaScannerConnection.OnScanCompletedListener() {
+//                                                    public void onScanCompleted(String path, Uri uri) {
+//                                                        Intent resultIntent = new Intent();
+//                                                        resultIntent.putExtra("position", position);
+//                                                        setResult(Activity.RESULT_OK, resultIntent);
+//                                                        finish();
+//                                                    }
+//                                                });
+//                                    }
+//                                }
+//                                dialog.dismiss();
+//                            }
+//                        })
+//                        .setNegativeButton("cancel", new DialogInterface.OnClickListener() {
+//                            public void onClick(DialogInterface dialog, int which) {
+//                                dialog.dismiss();
+//                            }
+//                        }).create();
+//                alertDialog.show();
+
+                CustomDeleteDialog customDeleteDialog = new CustomDeleteDialog(ImagePreviewActivity.this, new CustomListener() {
+                    @Override
+                    public void onCancel() {
+
+                    }
+                    @Override
+                    public void onYes() {
+                        File file = new File(photo.getFile());
+                        if (file.exists()) {
+                            if (!file.canWrite()) {
+                                performFileSearch(file.getPath());
+                            } else {
+                                file.delete();
+                                MediaScannerConnection.scanFile(ImagePreviewActivity.this, new String[]{photo.getFile()},
+                                        null, new MediaScannerConnection.OnScanCompletedListener() {
+                                            public void onScanCompleted(String path, Uri uri) {
+                                                Intent resultIntent = new Intent();
+                                                resultIntent.putExtra("position", position);
+                                                setResult(Activity.RESULT_OK, resultIntent);
+                                                finish();
+                                            }
+                                        });
                             }
-                        })
-                        .setNegativeButton("cancel", new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int which) {
-                                dialog.dismiss();
-                            }
-                        }).create();
-                alertDialog.show();
+                        }
+                    }
+                });
+                customDeleteDialog.setCancelable(false);
+                customDeleteDialog.setCanceledOnTouchOutside(false);
+                customDeleteDialog.show();
             }
         });
     }

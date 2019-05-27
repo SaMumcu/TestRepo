@@ -31,6 +31,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
@@ -82,6 +83,7 @@ public class ViewAlbumActivity extends AppCompatActivity {
     private AutoCompleteTextView autoCompleteTextView;
     private CustomListAdapter adapter = null;
     private ImageView dropDownTagIcon;
+    private TextView noOfPhotos;
 
 
     @Override
@@ -97,8 +99,10 @@ public class ViewAlbumActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         autoCompleteTextView = toolbar.findViewById(R.id.autoCompleteTextView);
         dropDownTagIcon = toolbar.findViewById(R.id.dropDownIcon);
+        noOfPhotos = findViewById(R.id.noOfPhotos);
         Typeface typeface = Typeface.createFromAsset(getAssets(), "font/Roboto-Medium.ttf");
         autoCompleteTextView.setTypeface(typeface);
+        noOfPhotos.setTypeface(typeface);
         ActionBar mActionBar = getSupportActionBar();
         mActionBar.setDisplayHomeAsUpEnabled(true);
         mActionBar.setHomeButtonEnabled(true);
@@ -110,7 +114,6 @@ public class ViewAlbumActivity extends AppCompatActivity {
         listOfTags.add("Search By Tag");
         mArrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, listOfTags);
         mArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-
 
         /**
          * Initialize Views
@@ -125,7 +128,7 @@ public class ViewAlbumActivity extends AppCompatActivity {
         RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(this, 2);
         mRecyclerView.setLayoutManager(mLayoutManager);
         mRecyclerView.setHasFixedSize(true);
-        mRecyclerView.addItemDecoration(new GridSpacingItemDecoration(2, Util.dpToPx(ViewAlbumActivity.this, 14), true));
+        mRecyclerView.addItemDecoration(new GridSpacingItemDecoration(2, Util.dpToPx(ViewAlbumActivity.this, 12), true));
         mRecyclerView.setItemAnimator(new DefaultItemAnimator());
         mAdapter = new ViewAlbumAdapter(this, new ArrayList<Photo>());
         mRecyclerView.setAdapter(mAdapter);
