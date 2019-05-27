@@ -7,4 +7,6 @@
     <color name="colorWhite">#FFFFFF</color>
     <color name="backgroundGrayColor">#E8E8E8</color>
     <color name="colorBlack">#000000</color>
+    <color name="colorBlue">#427FFC</color>
+    <color name="darkGrayColor">#878787</color>
 </resources>

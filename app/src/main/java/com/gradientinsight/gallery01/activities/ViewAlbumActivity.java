@@ -4,18 +4,22 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -24,6 +28,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -35,6 +40,7 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabel;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabeler;
 import com.gradientinsight.gallery01.R;
+import com.gradientinsight.gallery01.adapters.CustomListAdapter;
 import com.gradientinsight.gallery01.adapters.ViewAlbumAdapter;
 import com.gradientinsight.gallery01.dao.PhotoDao;
 import com.gradientinsight.gallery01.database.AppDatabase;
@@ -45,7 +51,6 @@ import com.gradientinsight.gallery01.util.Util;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -73,9 +78,11 @@ public class ViewAlbumActivity extends AppCompatActivity {
     private GetBitmapTask mGetBitmapTask;
     private Spinner mSpinner = null;
     private ArrayAdapter<String> mArrayAdapter = null;
+    private Toolbar toolbar;
+    private AutoCompleteTextView autoCompleteTextView;
+    private CustomListAdapter adapter = null;
+    private ImageView dropDownTagIcon;
 
-
-    String[] fruits = {"Apple", "Appleee", "Banana", "Cherry", "Date", "Grape", "Kiwi", "Mango", "Pear"};
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -86,8 +93,16 @@ public class ViewAlbumActivity extends AppCompatActivity {
          * Get Extra Album Name, set Activity title and enable back button
          */
         albumName = getIntent().getStringExtra(albumNameExtra);
-//        this.setTitle(albumName);
-//        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        autoCompleteTextView = toolbar.findViewById(R.id.autoCompleteTextView);
+        dropDownTagIcon = toolbar.findViewById(R.id.dropDownIcon);
+        Typeface typeface = Typeface.createFromAsset(getAssets(), "font/Roboto-Medium.ttf");
+        autoCompleteTextView.setTypeface(typeface);
+        ActionBar mActionBar = getSupportActionBar();
+        mActionBar.setDisplayHomeAsUpEnabled(true);
+        mActionBar.setHomeButtonEnabled(true);
+        mActionBar.setHomeAsUpIndicator(ContextCompat.getDrawable(this, R.drawable.ic_back_icon));
 
         /**
          * Initialize ArrayAdapter for Spinner
@@ -119,59 +134,87 @@ public class ViewAlbumActivity extends AppCompatActivity {
          * Add OnRefresh Listener
          */
         addOnRefreshListener();
+        loadAlbumPhotos();
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, fruits);
-        AutoCompleteTextView actv = findViewById(R.id.autoCompleteTextView);
-        actv.setAdapter(adapter);
+        adapter = new CustomListAdapter(this, R.layout.tag_list_item, getData());
+        autoCompleteTextView = findViewById(R.id.autoCompleteTextView);
+        autoCompleteTextView.setAdapter(adapter);
+        autoCompleteTextView.setOnItemClickListener(onItemClickListener);
 
-        actv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        dropDownTagIcon.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                String item = (String) parent.getItemAtPosition(position);
-                int pos = Arrays.asList(fruits).indexOf(item);
-                Toast.makeText(ViewAlbumActivity.this, item, Toast.LENGTH_LONG).show();
+            public void onClick(View v) {
+                autoCompleteTextView.showDropDown();
             }
         });
-
-//        loadAlbumPhotos();
     }
 
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu_main, menu);
-        MenuItem item = menu.findItem(R.id.action_search);
-        mSpinner = (Spinner) MenuItemCompat.getActionView(item);
-        mSpinner.setAdapter(mArrayAdapter);
-        mSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (position == 0 && !TextUtils.isEmpty(filteredTag)) {
-                    filteredTag = "";
-                    filterAlbumPhotosList(filteredTag);
-                } else if (position != 0) {
-                    filteredTag = listOfTags.get(position);
-                    filterAlbumPhotosList(filteredTag);
+    private AdapterView.OnItemClickListener onItemClickListener =
+            new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                    Toast.makeText(ViewAlbumActivity.this,
+                            "Clicked item from auto completion list "
+                                    + adapterView.getItemAtPosition(i)
+                            , Toast.LENGTH_SHORT).show();
                 }
-            }
+            };
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
 
-            }
-        });
-        return super.onCreateOptionsMenu(menu);
+    private List<String> getData() {
+        List<String> dataList = new ArrayList<String>();
+        dataList.add("Fashion Men");
+        dataList.add("Fashion Women");
+        dataList.add("Baby");
+        dataList.add("Kids");
+        dataList.add("Electronics");
+        dataList.add("Appliance");
+        dataList.add("Travel");
+        dataList.add("Bags");
+        dataList.add("FootWear");
+        dataList.add("Jewellery");
+        dataList.add("Sports");
+        dataList.add("Electrical");
+        dataList.add("Sports Kids");
+        return dataList;
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.action_search) {
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
+
+//    @SuppressWarnings("deprecation")
+//    @Override
+//    public boolean onCreateOptionsMenu(Menu menu) {
+//        MenuInflater inflater = getMenuInflater();
+//        inflater.inflate(R.menu.menu_main, menu);
+//        MenuItem item = menu.findItem(R.id.action_search);
+//        mSpinner = (Spinner) MenuItemCompat.getActionView(item);
+//        mSpinner.setAdapter(mArrayAdapter);
+//        mSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+//            @Override
+//            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+//                if (position == 0 && !TextUtils.isEmpty(filteredTag)) {
+//                    filteredTag = "";
+//                    filterAlbumPhotosList(filteredTag);
+//                } else if (position != 0) {
+//                    filteredTag = listOfTags.get(position);
+//                    filterAlbumPhotosList(filteredTag);
+//                }
+//            }
+//
+//            @Override
+//            public void onNothingSelected(AdapterView<?> parent) {
+//
+//            }
+//        });
+//        return super.onCreateOptionsMenu(menu);
+//    }
+//
+//    @Override
+//    public boolean onOptionsItemSelected(MenuItem item) {
+//        if (item.getItemId() == R.id.action_search) {
+//            return true;
+//        }
+//        return super.onOptionsItemSelected(item);
+//    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {

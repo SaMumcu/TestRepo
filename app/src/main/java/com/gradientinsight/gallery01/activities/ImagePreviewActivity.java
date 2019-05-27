@@ -3,14 +3,19 @@ package com.gradientinsight.gallery01.activities;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.DocumentsContract;
 import android.support.v4.app.ShareCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
+import android.support.v7.app.ActionBar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -30,35 +35,43 @@ public class ImagePreviewActivity extends AppCompatActivity {
     Photo photo;
     String path;
     int type;
-    LinearLayout footer;
-    TextView tags;
     int position;
     private static final int READ_REQUEST_CODE = 42;
+    private Toolbar toolbar;
+    private TextView title;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_preview_image);
-        getSupportActionBar().hide();
+
+        toolbar = findViewById(R.id.toolbar);
+        title = findViewById(R.id.toolbar_title);
+        setSupportActionBar(toolbar);
+        Typeface typeface = Typeface.createFromAsset(getAssets(), "font/Roboto-Regular.ttf");
+        title.setEllipsize(TextUtils.TruncateAt.END);
+        title.setMaxLines(2);
+        title.setTextSize(18);
+        title.setTypeface(typeface);
+        ActionBar mActionBar = getSupportActionBar();
+        mActionBar.setDisplayHomeAsUpEnabled(true);
+        mActionBar.setHomeButtonEnabled(true);
+        mActionBar.setHomeAsUpIndicator(ContextCompat.getDrawable(this, R.drawable.ic_back_icon));
 
         Intent intent = getIntent();
         type = intent.getIntExtra("type", 0);
 
         ImageView imagePreview = findViewById(R.id.image);
-        final ImageView delete = findViewById(R.id.delete);
+        ImageView delete = findViewById(R.id.delete);
         ImageView share = findViewById(R.id.share);
-        tags = findViewById(R.id.tags);
-        footer = findViewById(R.id.footerLayout);
-
 
         photo = intent.getParcelableExtra("photo");
         position = intent.getIntExtra("position", 0);
         path = photo.getFile();
-        footer.setVisibility(View.VISIBLE);
         String tag = photo.getTag();
         if (tag.equals("empty"))
             tag = "";
-        tags.setText(tag);
+        title.setText(tag);
 
         Glide.with(ImagePreviewActivity.this)
                 .load(new File(path))
@@ -166,5 +179,9 @@ public class ImagePreviewActivity extends AppCompatActivity {
         startActivityForResult(intent, READ_REQUEST_CODE);
     }
 
-
+    @Override
+    public boolean onSupportNavigateUp() {
+        onBackPressed();
+        return true;
+    }
 }

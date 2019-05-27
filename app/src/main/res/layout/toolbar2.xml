@@ -1,6 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
-    android:layout_height="match_parent">
+<android.support.v7.widget.Toolbar xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/toolbar"
+    android:layout_width="match_parent"
+    android:layout_height="?attr/actionBarSize"
+    android:background="@android:color/white"
+    app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+    app:theme="@style/Widget.AppCompat.Light.ActionBar">
 
-</android.support.constraint.ConstraintLayout>
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="0dp"
+        android:paddingEnd="8dp"
+        android:paddingTop="8dp"
+        android:paddingBottom="8dp">
+
+        <android.support.v7.widget.AppCompatAutoCompleteTextView
+            android:id="@+id/autoCompleteTextView"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="@drawable/rounded_corner"
+            android:hint="@string/search_by_tag"
+            android:textColor="@color/colorLightGray"
+            android:singleLine="true"
+            android:paddingStart="15dp"
+            android:paddingEnd="30dp"
+            android:textColorHint="@color/colorLightGray"
+            android:textSize="18sp" />
+
+        <ImageView
+            android:id="@+id/dropDownIcon"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/autoCompleteTextView"
+            android:layout_alignRight="@+id/autoCompleteTextView"
+            android:layout_alignEnd="@+id/autoCompleteTextView"
+            android:layout_alignBottom="@+id/autoCompleteTextView"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_drop_down_icon"/>
+    </RelativeLayout>
+</android.support.v7.widget.Toolbar>
