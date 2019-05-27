@@ -12,7 +12,6 @@ import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -20,19 +19,16 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.text.Editable;
 import android.text.TextUtils;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -78,10 +74,9 @@ public class ViewAlbumActivity extends AppCompatActivity {
     private UpdatePhotosTask mUpdatePhotosTask;
     private GetBitmapTask mGetBitmapTask;
     private Spinner mSpinner = null;
-    private ArrayAdapter<String> mArrayAdapter = null;
     private Toolbar toolbar;
     private AutoCompleteTextView autoCompleteTextView;
-    private CustomListAdapter adapter = null;
+    private CustomListAdapter mArrayAdapter = null;
     private ImageView dropDownTagIcon;
     private TextView noOfPhotos;
 
@@ -109,13 +104,6 @@ public class ViewAlbumActivity extends AppCompatActivity {
         mActionBar.setHomeAsUpIndicator(ContextCompat.getDrawable(this, R.drawable.ic_back_icon));
 
         /**
-         * Initialize ArrayAdapter for Spinner
-         */
-        listOfTags.add("Search By Tag");
-        mArrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, listOfTags);
-        mArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-
-        /**
          * Initialize Views
          */
         mLinearLayout = findViewById(R.id.loaderSection);
@@ -139,9 +127,9 @@ public class ViewAlbumActivity extends AppCompatActivity {
         addOnRefreshListener();
         loadAlbumPhotos();
 
-        adapter = new CustomListAdapter(this, R.layout.tag_list_item, getData());
+        mArrayAdapter = new CustomListAdapter(this, R.layout.tag_list_item, listOfTags);
         autoCompleteTextView = findViewById(R.id.autoCompleteTextView);
-        autoCompleteTextView.setAdapter(adapter);
+        autoCompleteTextView.setAdapter(mArrayAdapter);
         autoCompleteTextView.setOnItemClickListener(onItemClickListener);
 
         dropDownTagIcon.setOnClickListener(new View.OnClickListener() {
@@ -150,74 +138,36 @@ public class ViewAlbumActivity extends AppCompatActivity {
                 autoCompleteTextView.showDropDown();
             }
         });
+
+        autoCompleteTextView.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (s.toString().length() == 0) {
+                    filteredTag = "";
+                    filterAlbumPhotosList(filteredTag);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+
+            }
+        });
     }
 
     private AdapterView.OnItemClickListener onItemClickListener =
             new AdapterView.OnItemClickListener() {
                 @Override
-                public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    Toast.makeText(ViewAlbumActivity.this,
-                            "Clicked item from auto completion list "
-                                    + adapterView.getItemAtPosition(i)
-                            , Toast.LENGTH_SHORT).show();
+                public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                    filteredTag = (String) adapterView.getItemAtPosition(position);
+                    filterAlbumPhotosList(filteredTag);
                 }
             };
-
-
-    private List<String> getData() {
-        List<String> dataList = new ArrayList<String>();
-        dataList.add("Fashion Men");
-        dataList.add("Fashion Women");
-        dataList.add("Baby");
-        dataList.add("Kids");
-        dataList.add("Electronics");
-        dataList.add("Appliance");
-        dataList.add("Travel");
-        dataList.add("Bags");
-        dataList.add("FootWear");
-        dataList.add("Jewellery");
-        dataList.add("Sports");
-        dataList.add("Electrical");
-        dataList.add("Sports Kids");
-        return dataList;
-    }
-
-
-//    @SuppressWarnings("deprecation")
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        MenuInflater inflater = getMenuInflater();
-//        inflater.inflate(R.menu.menu_main, menu);
-//        MenuItem item = menu.findItem(R.id.action_search);
-//        mSpinner = (Spinner) MenuItemCompat.getActionView(item);
-//        mSpinner.setAdapter(mArrayAdapter);
-//        mSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-//            @Override
-//            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-//                if (position == 0 && !TextUtils.isEmpty(filteredTag)) {
-//                    filteredTag = "";
-//                    filterAlbumPhotosList(filteredTag);
-//                } else if (position != 0) {
-//                    filteredTag = listOfTags.get(position);
-//                    filterAlbumPhotosList(filteredTag);
-//                }
-//            }
-//
-//            @Override
-//            public void onNothingSelected(AdapterView<?> parent) {
-//
-//            }
-//        });
-//        return super.onCreateOptionsMenu(menu);
-//    }
-//
-//    @Override
-//    public boolean onOptionsItemSelected(MenuItem item) {
-//        if (item.getItemId() == R.id.action_search) {
-//            return true;
-//        }
-//        return super.onOptionsItemSelected(item);
-//    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -379,14 +329,12 @@ public class ViewAlbumActivity extends AppCompatActivity {
     private void updateArrayAdapter() {
         if (mArrayAdapter != null) {
             if (tempTags.size() > 0) {
-                tempTags.remove(0);
                 Collections.sort(tempTags, new Comparator<String>() {
                     @Override
                     public int compare(String o1, String o2) {
                         return o1.compareTo(o2);
                     }
                 });
-                tempTags.add(0, "Search by Tag");
                 listOfTags.clear();
                 listOfTags.addAll(tempTags);
                 mArrayAdapter.notifyDataSetChanged();
@@ -417,6 +365,7 @@ public class ViewAlbumActivity extends AppCompatActivity {
                     updateTagList(tag.split(","));
             }
             updateArrayAdapter();
+            noOfPhotos.setText(photoArrayList.size() + " Photos");
             generateTagsForAlbumPhotos();
         }
         if (swipeRefreshLayout.isRefreshing())

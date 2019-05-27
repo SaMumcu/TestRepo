@@ -60,7 +60,6 @@ public class AlbumActivity extends AppCompatActivity {
     private TextView toolBarTitle;
     private TextView totalAlbums;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -190,6 +189,7 @@ public class AlbumActivity extends AppCompatActivity {
             ArrayList<Album> updateAlbums = new ArrayList<>();
             updateAlbums.addAll(albumList);
             mAdapter.setData(updateAlbums);
+            totalAlbums.setText(albumList.size() + " Albums");
         }
         if (swipeRefreshLayout.isRefreshing()) {
             swipeRefreshLayout.setRefreshing(false);
