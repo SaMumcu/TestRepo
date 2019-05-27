@@ -2,22 +2,31 @@ package com.gradientinsight.gallery01.activities;
 
 import android.Manifest;
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.DocumentsContract;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.FileProvider;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.gradientinsight.gallery01.R;
 import com.gradientinsight.gallery01.adapters.AlbumAdapter;
@@ -26,6 +35,8 @@ import com.gradientinsight.gallery01.util.ExternalPhotosUtil;
 import com.gradientinsight.gallery01.util.GridSpacingItemDecoration;
 import com.gradientinsight.gallery01.util.Util;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -45,11 +56,23 @@ public class AlbumActivity extends AppCompatActivity {
     private AlbumAdapter mAdapter;
     private ArrayList<Album> albumArrayList = new ArrayList<>();
     private LinearLayout mLoaderLayout;
+    private Toolbar toolbar;
+    private TextView toolBarTitle;
+    private TextView totalAlbums;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_album);
+
+        totalAlbums = findViewById(R.id.totalAlbums);
+        toolbar = findViewById(R.id.toolbar);
+        toolBarTitle = findViewById(R.id.toolbar_title);
+        setSupportActionBar(toolbar);
+        Typeface typeface = Typeface.createFromAsset(getAssets(), "font/Roboto-Medium.ttf");
+        toolBarTitle.setTypeface(typeface);
+        totalAlbums.setTypeface(typeface);
 
         swipeRefreshLayout = findViewById(R.id.swipe_container);
         mLoaderLayout = findViewById(R.id.loaderSection);
@@ -61,7 +84,7 @@ public class AlbumActivity extends AppCompatActivity {
         RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(this, 2);
         mRecyclerView.setLayoutManager(mLayoutManager);
         mRecyclerView.setHasFixedSize(true);
-        mRecyclerView.addItemDecoration(new GridSpacingItemDecoration(2, Util.dpToPx(AlbumActivity.this, 5), true));
+        mRecyclerView.addItemDecoration(new GridSpacingItemDecoration(2, Util.dpToPx(AlbumActivity.this, 12), true));
         mRecyclerView.setItemAnimator(new DefaultItemAnimator());
         mAdapter = new AlbumAdapter(AlbumActivity.this, albumArrayList);
         mRecyclerView.setAdapter(mAdapter);
@@ -72,7 +95,6 @@ public class AlbumActivity extends AppCompatActivity {
         requestRunTimePermissions();
         addOnSwipeRefreshListener();
     }
-
 
     @Override
     protected void onStart() {
@@ -150,7 +172,8 @@ public class AlbumActivity extends AppCompatActivity {
             Album allPhotosAlbum = ExternalPhotosUtil.getAllPhotosAlbum(mContext);
             ArrayList<Album> newAlbumsList = new ArrayList<>();
             newAlbumsList.addAll(albums);
-            newAlbumsList.add(0, allPhotosAlbum);
+            if (allPhotosAlbum != null)
+                newAlbumsList.add(0, allPhotosAlbum);
             return newAlbumsList;
         }
 

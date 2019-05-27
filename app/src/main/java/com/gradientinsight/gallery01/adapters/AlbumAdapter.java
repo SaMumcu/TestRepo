@@ -2,6 +2,7 @@ package com.gradientinsight.gallery01.adapters;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -12,13 +13,14 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.RequestOptions;
 import com.gradientinsight.gallery01.R;
-import com.gradientinsight.gallery01.activities.AlbumViewActivity;
 import com.gradientinsight.gallery01.activities.ViewAlbumActivity;
 import com.gradientinsight.gallery01.diffUtil.AlbumDiffUtilCallBack;
 import com.gradientinsight.gallery01.model.Album;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,13 +47,18 @@ public class AlbumAdapter extends RecyclerView.Adapter<AlbumAdapter.AlbumViewHol
             albumName = itemView.findViewById(R.id.albumName);
             count = itemView.findViewById(R.id.count);
 
+            Typeface typeface = Typeface.createFromAsset(mContext.getAssets(), "font/Roboto-Medium.ttf");
+            Typeface regular = Typeface.createFromAsset(mContext.getAssets(), "font/Roboto-Regular.ttf");
+            albumName.setTypeface(typeface);
+            count.setTypeface(regular);
+
             itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     int position = getAdapterPosition();
                     String albumName = albumList.get(position).getAlbumName();
                     Intent intent = new Intent(mContext, ViewAlbumActivity.class);
-                    intent.putExtra(AlbumViewActivity.albumNameExtra, albumName);
+                    intent.putExtra(ViewAlbumActivity.albumNameExtra, albumName);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                     mContext.startActivity(intent);
                 }

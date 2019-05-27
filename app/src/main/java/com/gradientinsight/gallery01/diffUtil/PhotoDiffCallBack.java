@@ -35,22 +35,24 @@ public class PhotoDiffCallBack extends DiffUtil.Callback {
 
     @Override
     public boolean areContentsTheSame(int oldItemPosition, int newItemPosition) {
+        Photo oldPhoto = oldList.get(oldItemPosition);
+        Photo newPhoto = newList.get(newItemPosition);
         int result = newList.get(newItemPosition).compareTo(oldList.get(oldItemPosition));
         return result == 0;
     }
 
-//    @Nullable
-//    @Override
-//    public Object getChangePayload(int oldItemPosition, int newItemPosition) {
-//        Photo newPhoto = newList.get(newItemPosition);
-//        Photo oldPhoto = oldList.get(oldItemPosition);
-//        Bundle diff = new Bundle();
-//        if (!newPhoto.getTag().equals(oldPhoto.getTag())) {
-//            diff.putString("tag", newPhoto.getTag());
-//        }
-//        if (diff.size() == 0) {
-//            return null;
-//        }
-//        return diff;
-//    }
+    @Nullable
+    @Override
+    public Object getChangePayload(int oldItemPosition, int newItemPosition) {
+        Photo newPhoto = newList.get(newItemPosition);
+        Photo oldPhoto = oldList.get(oldItemPosition);
+        Bundle diff = new Bundle();
+        if (!newPhoto.getTag().equals(oldPhoto.getTag())) {
+            diff.putString("tag", newPhoto.getTag());
+        }
+        if (diff.size() == 0) {
+            return null;
+        }
+        return diff;
+    }
 }

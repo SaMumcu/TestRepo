@@ -8,27 +8,27 @@ import android.os.Parcelable;
 import android.support.annotation.NonNull;
 
 @Entity(tableName = "photo_table")
-public class Photo implements Parcelable, Comparable {
+public class Photo implements Parcelable, Comparable, Cloneable {
 
     @PrimaryKey
     @NonNull
     @ColumnInfo(name = "id")
-    private String id;
+    public String id;
 
     @ColumnInfo(name = "file")
-    private String file;
+    public String file;
 
     @ColumnInfo(name = "name")
-    private String name;
+    public String name;
 
     @ColumnInfo(name = "type")
-    private String type;
+    public String type;
 
     @ColumnInfo(name = "date_taken")
-    private String dateTaken;
+    public String dateTaken;
 
     @ColumnInfo(name = "tag")
-    private String tag;
+    public String tag;
 
     public Photo(@NonNull String id, String file, String name, String type, String dateTaken, String tag) {
         this.id = id;
@@ -150,9 +150,21 @@ public class Photo implements Parcelable, Comparable {
     @Override
     public int compareTo(Object o) {
         Photo compare = (Photo) o;
-        if (compare.id.equals(this.id) && compare.name.equals(this.name) && compare.tag.equals(this.tag)) {
+        if (compare.id.equals(this.id) && compare.file.equals(this.file) && compare.name.equals(this.name)
+                && compare.type.equals(this.type) && compare.dateTaken.equals(this.dateTaken) && compare.tag.equals(this.tag)) {
             return 0;
         }
         return 1;
+    }
+
+    @Override
+    public Photo clone() {
+        Photo clone;
+        try {
+            clone = (Photo) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException(e); //should not happen
+        }
+        return clone;
     }
 }

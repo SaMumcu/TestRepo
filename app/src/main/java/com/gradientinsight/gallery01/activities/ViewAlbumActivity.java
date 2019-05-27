@@ -1,6 +1,7 @@
 package com.gradientinsight.gallery01.activities;
 
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
@@ -9,12 +10,23 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
+import android.widget.LinearLayout;
+import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
@@ -33,23 +45,37 @@ import com.gradientinsight.gallery01.util.Util;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ViewAlbumActivity extends AppCompatActivity {
 
     public static String albumNameExtra = "albumNameExtra";
     private String albumName = null;
     private boolean allLoaded = false;
+    private String filteredTag = "";
     private ArrayList<Photo> originalPhotosList = new ArrayList<>();
-    private ArrayList<Photo> tempPhotos = new ArrayList<>();
-    private ArrayList<String> tagsList = new ArrayList<>();
+    private List<String> listOfTags = new ArrayList<>();
+    private List<String> tempTags = new ArrayList<>();
     private ArrayList<Photo> subList = new ArrayList<>();
+    private HashMap<Object, String> mHashMap = new HashMap<>();
 
+    private LinearLayout mLinearLayout;
     private RecyclerView mRecyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
     private ViewAlbumAdapter mAdapter;
     private LoadAlbumPhotosTask mLoadAlbumPhotosTask;
     private UpdatePhotosTask mUpdatePhotosTask;
+    private GetBitmapTask mGetBitmapTask;
+    private Spinner mSpinner = null;
+    private ArrayAdapter<String> mArrayAdapter = null;
+
+
+    String[] fruits = {"Apple", "Appleee", "Banana", "Cherry", "Date", "Grape", "Kiwi", "Mango", "Pear"};
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -60,12 +86,21 @@ public class ViewAlbumActivity extends AppCompatActivity {
          * Get Extra Album Name, set Activity title and enable back button
          */
         albumName = getIntent().getStringExtra(albumNameExtra);
-        this.setTitle(albumName);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+//        this.setTitle(albumName);
+//        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        /**
+         * Initialize ArrayAdapter for Spinner
+         */
+        listOfTags.add("Search By Tag");
+        mArrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, listOfTags);
+        mArrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
 
         /**
          * Initialize Views
          */
+        mLinearLayout = findViewById(R.id.loaderSection);
         swipeRefreshLayout = findViewById(R.id.swipe_container);
         mRecyclerView = findViewById(R.id.recycler_view);
 
@@ -75,7 +110,7 @@ public class ViewAlbumActivity extends AppCompatActivity {
         RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(this, 2);
         mRecyclerView.setLayoutManager(mLayoutManager);
         mRecyclerView.setHasFixedSize(true);
-        mRecyclerView.addItemDecoration(new GridSpacingItemDecoration(2, Util.dpToPx(ViewAlbumActivity.this, 5), true));
+        mRecyclerView.addItemDecoration(new GridSpacingItemDecoration(2, Util.dpToPx(ViewAlbumActivity.this, 14), true));
         mRecyclerView.setItemAnimator(new DefaultItemAnimator());
         mAdapter = new ViewAlbumAdapter(this, new ArrayList<Photo>());
         mRecyclerView.setAdapter(mAdapter);
@@ -84,21 +119,110 @@ public class ViewAlbumActivity extends AppCompatActivity {
          * Add OnRefresh Listener
          */
         addOnRefreshListener();
-        loadAlbumPhotos();
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this, android.R.layout.simple_dropdown_item_1line, fruits);
+        AutoCompleteTextView actv = findViewById(R.id.autoCompleteTextView);
+        actv.setAdapter(adapter);
+
+        actv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String item = (String) parent.getItemAtPosition(position);
+                int pos = Arrays.asList(fruits).indexOf(item);
+                Toast.makeText(ViewAlbumActivity.this, item, Toast.LENGTH_LONG).show();
+            }
+        });
+
+//        loadAlbumPhotos();
+    }
+
+
+    @SuppressWarnings("deprecation")
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_main, menu);
+        MenuItem item = menu.findItem(R.id.action_search);
+        mSpinner = (Spinner) MenuItemCompat.getActionView(item);
+        mSpinner.setAdapter(mArrayAdapter);
+        mSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (position == 0 && !TextUtils.isEmpty(filteredTag)) {
+                    filteredTag = "";
+                    filterAlbumPhotosList(filteredTag);
+                } else if (position != 0) {
+                    filteredTag = listOfTags.get(position);
+                    filterAlbumPhotosList(filteredTag);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        if (item.getItemId() == R.id.action_search) {
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == RESULT_OK && requestCode == 100) {
+            if (data != null) {
+                int pos = data.getIntExtra("position", 0);
+                Photo photo = originalPhotosList.get(pos);
+                originalPhotosList.remove(photo);
+                mAdapter.deletePhoto(pos);
+            }
+        }
     }
 
     private void addOnRefreshListener() {
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-
+                if (TextUtils.isEmpty(filteredTag)) {
+                    if (allLoaded) {
+                        loadAlbumPhotos();
+                    }
+                } else {
+                    filterAlbumPhotosList(filteredTag);
+                }
+                swipeRefreshLayout.setRefreshing(true);
             }
         });
+    }
+
+    @Override
+    protected void onRestart() {
+        super.onRestart();
+        loadAlbumPhotos();
     }
 
     private void loadAlbumPhotos() {
         mLoadAlbumPhotosTask = new LoadAlbumPhotosTask(this, albumName);
         mLoadAlbumPhotosTask.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR);
+        if (!swipeRefreshLayout.isRefreshing())
+            showLoader();
+    }
+
+    private void showLoader() {
+        mRecyclerView.setVisibility(View.INVISIBLE);
+        mLinearLayout.setVisibility(View.VISIBLE);
+    }
+
+    private void hideLoader() {
+        mLinearLayout.setVisibility(View.INVISIBLE);
+        mRecyclerView.setVisibility(View.VISIBLE);
     }
 
     static class LoadAlbumPhotosTask extends AsyncTask<Void, Void, ArrayList<Photo>> {
@@ -134,21 +258,21 @@ public class ViewAlbumActivity extends AppCompatActivity {
     static class UpdatePhotosTask extends AsyncTask<Void, Void, Void> {
 
         private WeakReference<ViewAlbumActivity> mAlbumActivityReference;
-        private ArrayList<Photo> photos;
-        private ArrayList<String> tags;
+        private HashMap<Object, String> mHashMap;
 
-        public UpdatePhotosTask(ViewAlbumActivity context, ArrayList<Photo> photos, ArrayList<String> tags) {
+        public UpdatePhotosTask(ViewAlbumActivity context, HashMap<Object, String> mHashMap) {
             mAlbumActivityReference = new WeakReference<>(context);
-            this.photos = photos;
-            this.tags = tags;
+            this.mHashMap = mHashMap;
         }
 
         @Override
         protected Void doInBackground(Void... voids) {
             Context mContext = mAlbumActivityReference.get();
             PhotoDao photoDao = AppDatabase.getAppDatabase(mContext).photoDao();
-            for (int i = 0; i < photos.size(); i++)
-                photoDao.update(photos.get(i).getTag(), tags.get(i));
+            for (Map.Entry<Object, String> entry : mHashMap.entrySet()) {
+                Photo photo = (Photo) entry.getKey();
+                photoDao.update(entry.getValue(), photo.getId());
+            }
             return null;
         }
 
@@ -156,7 +280,75 @@ public class ViewAlbumActivity extends AppCompatActivity {
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             ViewAlbumActivity activity = mAlbumActivityReference.get();
-            activity.updateAlbumPhotosAdapterWithUpdatedPhotosList(photos, tags);
+            activity.updatePhotos(mHashMap);
+        }
+    }
+
+    static class GetBitmapTask extends AsyncTask<Void, Void, Bitmap[]> {
+
+        private WeakReference<ViewAlbumActivity> mAlbumActivityReference;
+        private ArrayList<Photo> photos;
+
+        public GetBitmapTask(ViewAlbumActivity context, ArrayList<Photo> photos) {
+            mAlbumActivityReference = new WeakReference<>(context);
+            this.photos = photos;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected Bitmap[] doInBackground(Void... voids) {
+            Bitmap[] bitmaps = new Bitmap[photos.size()];
+            for (int i = 0; i < photos.size(); i++) {
+                bitmaps[i] = BitmapFactory.decodeFile(photos.get(i).getFile());
+            }
+            return bitmaps;
+        }
+
+        @Override
+        protected void onPostExecute(Bitmap[] bitmaps) {
+            super.onPostExecute(bitmaps);
+            mAlbumActivityReference.get().getPhotosLabels(bitmaps, photos);
+        }
+    }
+
+    /**
+     * Update the list of Tags
+     *
+     * @param tags tags
+     */
+    private void updateTagList(String[] tags) {
+        for (String tag : tags) {
+            if (!tag.equals("empty") && !tempTags.contains(tag))
+                tempTags.add(tag);
+        }
+    }
+
+    /**
+     * Update the ArrayAdapter of Spinner
+     */
+    private void updateArrayAdapter() {
+        if (mArrayAdapter != null) {
+            if (tempTags.size() > 0) {
+                tempTags.remove(0);
+                Collections.sort(tempTags, new Comparator<String>() {
+                    @Override
+                    public int compare(String o1, String o2) {
+                        return o1.compareTo(o2);
+                    }
+                });
+                tempTags.add(0, "Search by Tag");
+                listOfTags.clear();
+                listOfTags.addAll(tempTags);
+                mArrayAdapter.notifyDataSetChanged();
+                if (!TextUtils.isEmpty(filteredTag))
+                    mSpinner.setSelection(listOfTags.indexOf(filteredTag));
+                tempTags.clear();
+                tempTags.addAll(listOfTags);
+            }
         }
     }
 
@@ -164,84 +356,128 @@ public class ViewAlbumActivity extends AppCompatActivity {
         if (photoArrayList.size() > 0) {
             ArrayList<Photo> mPhotos = new ArrayList<>();
             mPhotos.addAll(photoArrayList);
+            Collections.sort(mPhotos, new Comparator<Photo>() {
+                @Override
+                public int compare(Photo o1, Photo o2) {
+                    return o2.getDateTaken().compareTo(o1.getDateTaken());
+                }
+            });
             mAdapter.setData(mPhotos);
             originalPhotosList.clear();
             originalPhotosList.addAll(mPhotos);
+            for (Photo photo : originalPhotosList) {
+                String tag = photo.getTag();
+                if (!TextUtils.isEmpty(tag))
+                    updateTagList(tag.split(","));
+            }
+            updateArrayAdapter();
+            generateTagsForAlbumPhotos();
+        }
+        if (swipeRefreshLayout.isRefreshing())
+            swipeRefreshLayout.setRefreshing(false);
+        hideLoader();
+    }
 
+    private void filterAlbumPhotosList(String tag) {
+        ArrayList<Photo> filteredPhotos = new ArrayList<>();
+        if (TextUtils.isEmpty(tag)) {
+            filteredPhotos.addAll(originalPhotosList);
+            Collections.sort(filteredPhotos, new Comparator<Photo>() {
+                @Override
+                public int compare(Photo o1, Photo o2) {
+                    return o2.getDateTaken().compareTo(o1.getDateTaken());
+                }
+            });
+            mAdapter.setData(filteredPhotos);
+            stopRefreshing();
+        } else {
+            for (Photo row : originalPhotosList) {
+                if (row.getTag().toLowerCase().contains(tag.toLowerCase())) {
+                    filteredPhotos.add(row.clone());
+                }
+            }
+            Collections.sort(filteredPhotos, new Comparator<Photo>() {
+                @Override
+                public int compare(Photo o1, Photo o2) {
+                    return o2.getDateTaken().compareTo(o1.getDateTaken());
+                }
+            });
+            mAdapter.setData(filteredPhotos);
+            stopRefreshing();
+        }
+    }
+
+    private void stopRefreshing() {
+        if (swipeRefreshLayout.isRefreshing()) {
             new Handler(Looper.getMainLooper()).postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    ArrayList<Photo> newArrayList = new ArrayList<>();
-                    newArrayList.addAll(originalPhotosList);
-                    for (int j = 0; j < originalPhotosList.size(); j++)
-                        newArrayList.get(j).setTag("dddd" + j);
-                    mAdapter.setData(newArrayList);
+                    swipeRefreshLayout.setRefreshing(false);
                 }
-            }, 5000);
-//            generateTagsForAlbumPhotos();
+            }, 1000);
         }
     }
 
-    private void updateAlbumPhotosAdapterWithUpdatedPhotosList(ArrayList<Photo> photoArrayList, ArrayList<String> tags) {
+    private void updatePhotos(HashMap<Object, String> mHashMap) {
         ArrayList<Photo> newArrayList = new ArrayList<>();
-        if (photoArrayList.size() > 0) {
-            newArrayList.addAll(originalPhotosList);
-            for (int i = 0; i < photoArrayList.size(); i++) {
-                Photo mPhoto = photoArrayList.get(i);
-                int index = newArrayList.indexOf(mPhoto);
-                mPhoto.setTag(tags.get(i));
-                newArrayList.set(index, mPhoto);
+        for (Photo photo : originalPhotosList) {
+            Photo clone = photo.clone();
+            if (mHashMap.containsKey(photo)) {
+                clone.setTag(mHashMap.get(photo));
             }
-            mAdapter.setData(newArrayList);
-            originalPhotosList.clear();
-            originalPhotosList.addAll(newArrayList);
+            newArrayList.add(clone);
         }
+        originalPhotosList.clear();
+        originalPhotosList.addAll(newArrayList);
+        filterAlbumPhotosList(filteredTag);
+        updateArrayAdapter();
+        generateTagsForAlbumPhotos();
     }
 
     private void generateTagsForAlbumPhotos() {
-        tempPhotos.clear();
-        tempPhotos = new ArrayList<>();
         subList.clear();
         subList = new ArrayList<>();
-        tagsList.clear();
-        tagsList = new ArrayList<>();
+        mHashMap.clear();
+        mHashMap = new HashMap<>();
         subList = getListOfPhotosWithoutTags();
         int subListSize = subList.size();
         allLoaded = subListSize == 0;
-        if (subListSize > 0)
-            getPhotosLabels();
-    }
-
-    private void getPhotosLabels() {
-        for (final Photo photo : subList) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    Bitmap bitmap = BitmapFactory.decodeFile(photo.getFile());
-                    getLabels(bitmap, photo, new OnTagGenerated() {
-                        @Override
-                        public void onTag(StringBuilder tag, Photo mPhoto) {
-                            tempPhotos.add(mPhoto);
-                            String tags = tag.toString();
-                            if (TextUtils.isEmpty(tags))
-                                tags = "empty";
-                            tagsList.add(tags);
-                            if (tempPhotos.size() == subList.size()) {
-                                executeUpdatePhotosTask(tempPhotos, tagsList);
-                            }
-                        }
-
-                        @Override
-                        public void onFailure(Exception e) {
-                        }
-                    });
-                }
-            }).start();
+        if (subListSize > 0) {
+            executeBitmapTask();
         }
     }
 
-    private void executeUpdatePhotosTask(ArrayList<Photo> photos, ArrayList<String> tags) {
-        mUpdatePhotosTask = new UpdatePhotosTask(ViewAlbumActivity.this, photos, tags);
+    private void executeBitmapTask() {
+        mGetBitmapTask = new GetBitmapTask(ViewAlbumActivity.this, subList);
+        mGetBitmapTask.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR);
+    }
+
+    private void getPhotosLabels(Bitmap[] bitmaps, ArrayList<Photo> photos) {
+        for (int i = 0; i < photos.size(); i++) {
+            Bitmap bitmap = bitmaps[i];
+            Photo photo = photos.get(i);
+            getLabels(bitmap, photo, new OnTagGenerated() {
+                @Override
+                public void onTag(StringBuilder tag, Photo mPhoto) {
+                    String tags = tag.toString();
+                    if (TextUtils.isEmpty(tags))
+                        tags = "empty";
+                    updateTagList(tags.split(","));
+                    mHashMap.put(mPhoto, tags);
+                    if (mHashMap.size() == subList.size()) {
+                        executeUpdatePhotosTask(mHashMap);
+                    }
+                }
+
+                @Override
+                public void onFailure(Exception e) {
+                }
+            });
+        }
+    }
+
+    private void executeUpdatePhotosTask(HashMap<Object, String> mHashMap) {
+        mUpdatePhotosTask = new UpdatePhotosTask(ViewAlbumActivity.this, mHashMap);
         mUpdatePhotosTask.executeOnExecutor(AsyncTask.SERIAL_EXECUTOR);
     }
 
@@ -253,11 +489,26 @@ public class ViewAlbumActivity extends AppCompatActivity {
             String photoTag = photo.getTag();
             if (photoTag == null || TextUtils.isEmpty(photoTag))
                 listOfPhotos.add(photo);
-            if (listOfPhotos.size() == 10 || i + 1 == size) {
+            if (listOfPhotos.size() == 5 || i + 1 == size) {
                 return listOfPhotos;
             }
         }
         return listOfPhotos;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (mLoadAlbumPhotosTask != null) {
+            mLoadAlbumPhotosTask.cancel(true);
+        }
+        if (mUpdatePhotosTask != null)
+            mUpdatePhotosTask.cancel(true);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 
     public interface OnTagGenerated {
@@ -279,7 +530,7 @@ public class ViewAlbumActivity extends AppCompatActivity {
                         String text = label.getText();
                         sbTags.append(text);
                         if (!text.equals(lastLabel))
-                            sbTags.append(",");
+                            sbTags.append(", ");
                     }
                 }
                 callback.onTag(sbTags, photo);
@@ -294,6 +545,7 @@ public class ViewAlbumActivity extends AppCompatActivity {
 
     @Override
     public boolean onSupportNavigateUp() {
+        onBackPressed();
         return true;
     }
 }
