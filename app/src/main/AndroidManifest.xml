@@ -25,15 +25,17 @@
                 android:resource="@xml/provider_paths"/>
         </provider>
 
-        <activity android:name=".activities.AlbumActivity">
+        <activity android:name=".activities.AlbumActivity" android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <activity android:name=".activities.ImagePreviewActivity"></activity>
-        <activity android:name=".activities.ViewAlbumActivity"></activity>
+        <activity android:name=".activities.ImagePreviewActivity" android:screenOrientation="portrait">
+        </activity>
+        <activity android:name=".activities.ViewAlbumActivity" android:screenOrientation="portrait">
+        </activity>
         <meta-data
             android:name="com.google.firebase.ml.vision.DEPENDENCIES"
             android:value="label" />

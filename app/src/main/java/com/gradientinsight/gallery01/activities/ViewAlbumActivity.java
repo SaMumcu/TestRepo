@@ -37,6 +37,7 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabel;
 import com.google.firebase.ml.vision.label.FirebaseVisionImageLabeler;
 import com.gradientinsight.gallery01.R;
+import com.gradientinsight.gallery01.SimpleWorker;
 import com.gradientinsight.gallery01.adapters.CustomListAdapter;
 import com.gradientinsight.gallery01.adapters.ViewAlbumAdapter;
 import com.gradientinsight.gallery01.dao.PhotoDao;
@@ -79,7 +80,8 @@ public class ViewAlbumActivity extends AppCompatActivity {
     private CustomListAdapter mArrayAdapter = null;
     private ImageView dropDownTagIcon;
     private TextView noOfPhotos;
-
+    private LinearLayout linearLayout;
+    private SimpleWorker simpleWorker;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -106,6 +108,7 @@ public class ViewAlbumActivity extends AppCompatActivity {
         /**
          * Initialize Views
          */
+        linearLayout = findViewById(R.id.linearLayout);
         mLinearLayout = findViewById(R.id.loaderSection);
         swipeRefreshLayout = findViewById(R.id.swipe_container);
         mRecyclerView = findViewById(R.id.recycler_view);
@@ -129,6 +132,7 @@ public class ViewAlbumActivity extends AppCompatActivity {
 
         mArrayAdapter = new CustomListAdapter(this, R.layout.tag_list_item, listOfTags);
         autoCompleteTextView = findViewById(R.id.autoCompleteTextView);
+        autoCompleteTextView.setThreshold(1);
         autoCompleteTextView.setAdapter(mArrayAdapter);
         autoCompleteTextView.setOnItemClickListener(onItemClickListener);
 
@@ -147,7 +151,7 @@ public class ViewAlbumActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (s.toString().length() == 0) {
+                if (s.toString().length() == 0 && !TextUtils.isEmpty(filteredTag)) {
                     filteredTag = "";
                     filterAlbumPhotosList(filteredTag);
                 }
@@ -158,6 +162,7 @@ public class ViewAlbumActivity extends AppCompatActivity {
 
             }
         });
+        simpleWorker = new SimpleWorker();
     }
 
     private AdapterView.OnItemClickListener onItemClickListener =
@@ -201,6 +206,8 @@ public class ViewAlbumActivity extends AppCompatActivity {
     @Override
     protected void onRestart() {
         super.onRestart();
+        if (simpleWorker == null)
+            simpleWorker = new SimpleWorker();
         loadAlbumPhotos();
     }
 
@@ -212,13 +219,13 @@ public class ViewAlbumActivity extends AppCompatActivity {
     }
 
     private void showLoader() {
-        mRecyclerView.setVisibility(View.INVISIBLE);
+        linearLayout.setVisibility(View.INVISIBLE);
         mLinearLayout.setVisibility(View.VISIBLE);
     }
 
     private void hideLoader() {
         mLinearLayout.setVisibility(View.INVISIBLE);
-        mRecyclerView.setVisibility(View.VISIBLE);
+        linearLayout.setVisibility(View.VISIBLE);
     }
 
     static class LoadAlbumPhotosTask extends AsyncTask<Void, Void, ArrayList<Photo>> {
@@ -338,8 +345,6 @@ public class ViewAlbumActivity extends AppCompatActivity {
                 listOfTags.clear();
                 listOfTags.addAll(tempTags);
                 mArrayAdapter.notifyDataSetChanged();
-                if (!TextUtils.isEmpty(filteredTag))
-                    mSpinner.setSelection(listOfTags.indexOf(filteredTag));
                 tempTags.clear();
                 tempTags.addAll(listOfTags);
             }
@@ -362,7 +367,7 @@ public class ViewAlbumActivity extends AppCompatActivity {
             for (Photo photo : originalPhotosList) {
                 String tag = photo.getTag();
                 if (!TextUtils.isEmpty(tag))
-                    updateTagList(tag.split(","));
+                    updateTagList(tag.split(", "));
             }
             updateArrayAdapter();
             noOfPhotos.setText(photoArrayList.size() + " Photos");
@@ -429,6 +434,9 @@ public class ViewAlbumActivity extends AppCompatActivity {
         generateTagsForAlbumPhotos();
     }
 
+
+    Bitmap[] bitmaps = null;
+
     private void generateTagsForAlbumPhotos() {
         subList.clear();
         subList = new ArrayList<>();
@@ -438,7 +446,23 @@ public class ViewAlbumActivity extends AppCompatActivity {
         int subListSize = subList.size();
         allLoaded = subListSize == 0;
         if (subListSize > 0) {
-            executeBitmapTask();
+            bitmaps = null;
+            bitmaps = new Bitmap[subList.size()];
+            if (simpleWorker != null) {
+                simpleWorker.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        for (int i = 0; i < subList.size(); i++) {
+                            bitmaps[i] = BitmapFactory.decodeFile(subList.get(i).getFile());
+                        }
+                    }
+                }).execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        getPhotosLabels(bitmaps, subList);
+                    }
+                });
+            }
         }
     }
 
@@ -457,10 +481,17 @@ public class ViewAlbumActivity extends AppCompatActivity {
                     String tags = tag.toString();
                     if (TextUtils.isEmpty(tags))
                         tags = "empty";
-                    updateTagList(tags.split(","));
+                    updateTagList(tags.split(", "));
                     mHashMap.put(mPhoto, tags);
                     if (mHashMap.size() == subList.size()) {
-                        executeUpdatePhotosTask(mHashMap);
+//                        executeUpdatePhotosTask(mHashMap);
+
+                        PhotoDao photoDao = AppDatabase.getAppDatabase(ViewAlbumActivity.this).photoDao();
+                        for (Map.Entry<Object, String> entry : mHashMap.entrySet()) {
+                            Photo photo = (Photo) entry.getKey();
+                            photoDao.update(entry.getValue(), photo.getId());
+                        }
+                        updatePhotos(mHashMap);
                     }
                 }
 
@@ -494,6 +525,8 @@ public class ViewAlbumActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        simpleWorker.quit();
+        simpleWorker = null;
         if (mLoadAlbumPhotosTask != null) {
             mLoadAlbumPhotosTask.cancel(true);
         }

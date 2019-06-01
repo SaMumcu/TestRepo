@@ -59,12 +59,14 @@ public class AlbumActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private TextView toolBarTitle;
     private TextView totalAlbums;
+    private LinearLayout linearLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_album);
 
+        linearLayout = findViewById(R.id.linearLayout);
         totalAlbums = findViewById(R.id.totalAlbums);
         toolbar = findViewById(R.id.toolbar);
         toolBarTitle = findViewById(R.id.toolbar_title);
@@ -128,13 +130,13 @@ public class AlbumActivity extends AppCompatActivity {
     }
 
     private void showLoader() {
-        mRecyclerView.setVisibility(View.INVISIBLE);
+        linearLayout.setVisibility(View.INVISIBLE);
         mLoaderLayout.setVisibility(View.VISIBLE);
     }
 
     private void hideLoader() {
         mLoaderLayout.setVisibility(View.INVISIBLE);
-        mRecyclerView.setVisibility(View.VISIBLE);
+        linearLayout.setVisibility(View.VISIBLE);
     }
 
     private void loadAlbums() {
