@@ -52,8 +52,6 @@ public class ImagePreviewActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         Typeface typeface = Typeface.createFromAsset(getAssets(), "font/Roboto-Regular.ttf");
         title.setEllipsize(TextUtils.TruncateAt.END);
-        title.setMaxLines(2);
-        title.setTextSize(18);
         title.setTypeface(typeface);
         ActionBar mActionBar = getSupportActionBar();
         mActionBar.setDisplayHomeAsUpEnabled(true);
