@@ -5,4 +5,8 @@
     <string name="toolbar_title">Gallery</string>
     <string name="search_by_tag">Search by Tag</string>
     <string name="delete_text">Are you sure you want to \ndelete?</string>
+    <string name="media">&#160;Media</string>
+    <string name="default_album_name">My Album</string>
+    <string name="default_photo_count">2 Photos</string>
+    <string name="photos">Photos</string>
 </resources>

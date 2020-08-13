@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="album_name">17sp</dimen>
+    <dimen name="photo_count">12sp</dimen>
+    <dimen name="small_padding">4dp</dimen>
+    <dimen name="medium_padding">8dp</dimen>
+    <dimen name="card_layout">180dp</dimen>
+    <dimen name="large_padding">12dp</dimen>
+    <dimen name="big_text">40sp</dimen>
+    <dimen name="toolbar_height">110dp</dimen>
+</resources>

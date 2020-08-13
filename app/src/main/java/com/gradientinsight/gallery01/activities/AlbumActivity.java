@@ -2,20 +2,15 @@ package com.gradientinsight.gallery01.activities;
 
 import android.Manifest;
 import android.annotation.TargetApi;
-import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.provider.DocumentsContract;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.FileProvider;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
@@ -23,7 +18,6 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -35,8 +29,6 @@ import com.gradientinsight.gallery01.util.ExternalPhotosUtil;
 import com.gradientinsight.gallery01.util.GridSpacingItemDecoration;
 import com.gradientinsight.gallery01.util.Util;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,7 +49,6 @@ public class AlbumActivity extends AppCompatActivity {
     private ArrayList<Album> albumArrayList = new ArrayList<>();
     private LinearLayout mLoaderLayout;
     private Toolbar toolbar;
-    private TextView toolBarTitle;
     private TextView totalAlbums;
     private LinearLayout linearLayout;
 
@@ -67,12 +58,10 @@ public class AlbumActivity extends AppCompatActivity {
         setContentView(R.layout.activity_album);
 
         linearLayout = findViewById(R.id.linearLayout);
-        totalAlbums = findViewById(R.id.totalAlbums);
         toolbar = findViewById(R.id.toolbar);
-        toolBarTitle = findViewById(R.id.toolbar_title);
+        totalAlbums = toolbar.findViewById(R.id.totalAlbums);
         setSupportActionBar(toolbar);
         Typeface typeface = Typeface.createFromAsset(getAssets(), "font/Roboto-Medium.ttf");
-        toolBarTitle.setTypeface(typeface);
         totalAlbums.setTypeface(typeface);
 
         swipeRefreshLayout = findViewById(R.id.swipe_container);
@@ -82,10 +71,10 @@ public class AlbumActivity extends AppCompatActivity {
         /**
          * Initialize RecyclerView
          */
-        RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(this, 2);
+        RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(this, 3);
         mRecyclerView.setLayoutManager(mLayoutManager);
         mRecyclerView.setHasFixedSize(true);
-        mRecyclerView.addItemDecoration(new GridSpacingItemDecoration(2, Util.dpToPx(AlbumActivity.this, 12), true));
+        mRecyclerView.addItemDecoration(new GridSpacingItemDecoration(3, Util.dpToPx(AlbumActivity.this, 3), true));
         mRecyclerView.setItemAnimator(new DefaultItemAnimator());
         mAdapter = new AlbumAdapter(AlbumActivity.this, albumArrayList);
         mRecyclerView.setAdapter(mAdapter);
@@ -191,7 +180,6 @@ public class AlbumActivity extends AppCompatActivity {
             ArrayList<Album> updateAlbums = new ArrayList<>();
             updateAlbums.addAll(albumList);
             mAdapter.setData(updateAlbums);
-            totalAlbums.setText(albumList.size() + " Albums");
         }
         if (swipeRefreshLayout.isRefreshing()) {
             swipeRefreshLayout.setRefreshing(false);

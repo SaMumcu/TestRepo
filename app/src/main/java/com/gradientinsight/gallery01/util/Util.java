@@ -3,10 +3,11 @@ package com.gradientinsight.gallery01.util;
 import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
-import android.database.MergeCursor;
 import android.net.Uri;
 import android.provider.MediaStore;
 import android.util.TypedValue;
+
+import com.gradientinsight.gallery01.R;
 
 import java.io.File;
 
@@ -30,7 +31,7 @@ public class Util {
             }
             cursor.close();
         }
-        return counter + " Photos";
+        return counter + c.getString(R.string.media);
     }
 
     public static String getTotalPhotosCount(Context context) {
@@ -47,7 +48,7 @@ public class Util {
             }
             cursor.close();
         }
-        return counter + " Photos";
+        return counter + context.getString(R.string.media);
     }
 
     public static boolean validFileSize(File file) {
