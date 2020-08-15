@@ -10,6 +10,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AlertDialog;
@@ -28,6 +29,7 @@ import com.gradientinsight.gallery01.model.Album;
 import com.gradientinsight.gallery01.util.ExternalPhotosUtil;
 import com.gradientinsight.gallery01.util.GridSpacingItemDecoration;
 import com.gradientinsight.gallery01.util.Util;
+import com.gradientinsight.gallery01.widget.CustomSwitchView;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -51,6 +53,8 @@ public class AlbumActivity extends AppCompatActivity {
     private Toolbar toolbar;
     private TextView totalAlbums;
     private LinearLayout linearLayout;
+    private CustomSwitchView customSwitchView;
+    private ConstraintLayout mainLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +64,8 @@ public class AlbumActivity extends AppCompatActivity {
         linearLayout = findViewById(R.id.linearLayout);
         toolbar = findViewById(R.id.toolbar);
         totalAlbums = toolbar.findViewById(R.id.totalAlbums);
+        customSwitchView = toolbar.findViewById(R.id.customSwitchView);
+        mainLayout = findViewById(R.id.main_area);
         setSupportActionBar(toolbar);
         Typeface typeface = Typeface.createFromAsset(getAssets(), "font/Roboto-Medium.ttf");
         totalAlbums.setTypeface(typeface);
@@ -84,6 +90,22 @@ public class AlbumActivity extends AppCompatActivity {
          */
         requestRunTimePermissions();
         addOnSwipeRefreshListener();
+
+        customSwitchView.setOnCheckedChangedListener(new CustomSwitchView.OnCheckedChangedListener() {
+            @Override
+            public void onCheckedChanged(boolean checked) {
+                if (checked) {
+                    toolbar.setBackgroundColor(getResources().getColor(R.color.colorBlack));
+                    mainLayout.setBackgroundColor(getResources().getColor(R.color.colorBlack));
+                    totalAlbums.setTextColor(getResources().getColor(R.color.colorWhite));
+                }
+                else {
+                    toolbar.setBackgroundColor(getResources().getColor(R.color.colorWhite));
+                    mainLayout.setBackgroundColor(getResources().getColor(R.color.colorWhite));
+                    totalAlbums.setTextColor(getResources().getColor(R.color.switcher_off_color));
+                }
+            }
+        });
     }
 
     @Override

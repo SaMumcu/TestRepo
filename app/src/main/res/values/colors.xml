@@ -9,4 +9,8 @@
     <color name="colorBlack">#000000</color>
     <color name="colorBlue">#427FFC</color>
     <color name="darkGrayColor">#878787</color>
+
+    <color name="switcher_on_color">#000000</color>
+    <color name="switcher_off_color">#FFD700</color>
+    <color name="switcher_icon_color">@android:color/white</color>
 </resources>
