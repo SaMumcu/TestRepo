@@ -25,6 +25,7 @@ import android.widget.TextView;
 
 import com.gradientinsight.gallery01.R;
 import com.gradientinsight.gallery01.adapters.AlbumAdapter;
+import com.gradientinsight.gallery01.interfaces.OnCheckedChangedListener;
 import com.gradientinsight.gallery01.model.Album;
 import com.gradientinsight.gallery01.util.ExternalPhotosUtil;
 import com.gradientinsight.gallery01.util.GridSpacingItemDecoration;
@@ -91,7 +92,7 @@ public class AlbumActivity extends AppCompatActivity {
         requestRunTimePermissions();
         addOnSwipeRefreshListener();
 
-        customSwitchView.setOnCheckedChangedListener(new CustomSwitchView.OnCheckedChangedListener() {
+        customSwitchView.setOnCheckedChangedListener(new OnCheckedChangedListener() {
             @Override
             public void onCheckedChanged(boolean checked) {
                 if (checked) {

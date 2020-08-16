@@ -27,9 +27,9 @@
 
         <com.gradientinsight.gallery01.widget.CustomSwitchView
             android:id="@+id/customSwitchView"
-            android:layout_width="70dp"
-            android:layout_height="30dp"
-            android:layout_margin="8dp"
+            android:layout_width="@dimen/switch_w"
+            android:layout_height="@dimen/switch_h"
+            android:layout_margin="@dimen/medium_margin"
             android:layout_weight="0.01"
             android:layout_gravity="center_vertical" />
     </LinearLayout>

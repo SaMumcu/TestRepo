@@ -4,24 +4,20 @@ import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ArgbEvaluator;
 import android.animation.ValueAnimator;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
-import android.graphics.Outline;
 import android.graphics.Paint;
 import android.graphics.RectF;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.support.annotation.ColorInt;
 import android.support.annotation.Nullable;
-import android.support.annotation.RequiresApi;
 import android.util.AttributeSet;
 import android.view.View;
-import android.view.ViewOutlineProvider;
 
 import com.gradientinsight.gallery01.R;
+import com.gradientinsight.gallery01.interfaces.OnCheckedChangedListener;
 
 import static com.gradientinsight.gallery01.util.Constants.COLOR_ANIMATION_DURATION;
 import static com.gradientinsight.gallery01.util.Constants.KEY_CHECKED;
@@ -29,7 +25,6 @@ import static com.gradientinsight.gallery01.util.Constants.ON_CLICK_RADIUS_OFFSE
 import static com.gradientinsight.gallery01.util.Constants.STATE;
 import static com.gradientinsight.gallery01.util.Constants.SWITCHER_ANIMATION_DURATION;
 import static com.gradientinsight.gallery01.util.Constants.TRANSLATE_ANIMATION_DURATION;
-
 
 public class CustomSwitchView extends View {
 
@@ -39,76 +34,32 @@ public class CustomSwitchView extends View {
     private float defHeight = 0;
     private float defWidth = 0;
     private boolean checked = true;
-
-    private OnCheckedChangedListener onCheckedChangedListener;
-
+    private float switcherCornerRadius = 0f;
+    private float iconHeight = 0f;
+    private float iconTranslateX = 0f;
+    // from rounded rect to circle and back
+    private float iconProgress = 0f;
+    private float onClickRadiusOffset = 0f;
+    @ColorInt
+    private int currentColor = 0;
     @ColorInt
     private int onColor = 0;
     @ColorInt
     private int offColor = 0;
     @ColorInt
     private int iconColor = 0;
+    int toColor;
 
     private RectF switcherRect = new RectF(0f, 0f, 0f, 0f);
     private Paint switcherPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-
     private RectF iconRect = new RectF(0f, 0f, 0f, 0f);
     private RectF iconClipRect = new RectF(0f, 0f, 0f, 0f);
-    private Paint iconPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
+    private Paint iconPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private Paint iconClipPaint = new Paint(Paint.HINTING_OFF);
 
     private AnimatorSet animatorSet = new AnimatorSet();
-
-
-    private float onClickRadiusOffset = 0f;
-
-    public void setOnClickRadiusOffset(float value) {
-        onClickRadiusOffset = value;
-        switcherRect.left = value;
-        switcherRect.top = value;
-        switcherRect.right = getWidth() - value;
-        switcherRect.bottom = getHeight() - value;
-        invalidate();
-    }
-
-    @ColorInt
-    private int currentColor = 0;
-
-    public void setCurrentColor(@ColorInt int currentColor) {
-        this.currentColor = currentColor;
-        switcherPaint.setColor(currentColor);
-        iconClipPaint.setColor(currentColor);
-    }
-
-    private float switcherCornerRadius = 0f;
-    private float switchElevation = 0f;
-    private float iconHeight = 0f;
-
-    private float iconTranslateX = 0f;
-    // from rounded rect to circle and back
-    private float iconProgress = 0f;
-
-    public void setIconProgress(float iconProgress) {
-        this.iconProgress = iconProgress;
-        float iconOffset = lerp(0f, iconRadius - iconCollapsedWidth / 2, iconProgress);
-        iconRect.left = getWidth() - switcherCornerRadius - iconCollapsedWidth / 2 - iconOffset;
-        iconRect.right = getWidth() - switcherCornerRadius + iconCollapsedWidth / 2 + iconOffset;
-
-        float clipOffset = lerp(0f, iconClipRadius, iconProgress);
-        iconClipRect.set(
-                iconRect.centerX() - clipOffset,
-                iconRect.centerY() - clipOffset,
-                iconRect.centerX() + clipOffset,
-                iconRect.centerY() + clipOffset
-        );
-
-        postInvalidateOnAnimation();
-    }
-
-    private float lerp(float a, float b, float t) {
-        return a + (b - a) * t;
-    }
+    private OnCheckedChangedListener onCheckedChangedListener;
 
     public CustomSwitchView(Context context) {
         super(context);
@@ -125,17 +76,45 @@ public class CustomSwitchView extends View {
         init(context, attrs, defStyleAttr);
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
-    public CustomSwitchView(Context context, @Nullable AttributeSet attrs, int defStyleAttr, int defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
-        init(context, attrs, defStyleAttr);
+    public void setOnClickRadiusOffset(float value) {
+        onClickRadiusOffset = value;
+        switcherRect.left = value;
+        switcherRect.top = value;
+        switcherRect.right = getWidth() - value;
+        switcherRect.bottom = getHeight() - value;
+        invalidate();
+    }
+
+    public void setCurrentColor(@ColorInt int currentColor) {
+        this.currentColor = currentColor;
+        switcherPaint.setColor(currentColor);
+        iconClipPaint.setColor(currentColor);
+    }
+
+    public void setIconProgress(float iconProgress) {
+        this.iconProgress = iconProgress;
+        float iconOffset = lerp(0f, iconRadius - iconCollapsedWidth / 2, iconProgress);
+        iconRect.left = getWidth() - switcherCornerRadius - iconCollapsedWidth / 2 - iconOffset;
+        iconRect.right = getWidth() - switcherCornerRadius + iconCollapsedWidth / 2 + iconOffset;
+
+        float clipOffset = lerp(0f, iconClipRadius, iconProgress);
+
+        iconRectSet(iconClipRect,
+                iconRect.centerX() - clipOffset,
+                iconRect.centerY() - clipOffset,
+                iconRect.centerX() + clipOffset,
+                iconRect.centerY() + clipOffset);
+
+        postInvalidateOnAnimation();
+    }
+
+    private float lerp(float a, float b, float t) {
+        return a + (b - a) * t;
     }
 
     private void init(Context context, AttributeSet attrs, int defStyleAttr) {
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.Switcher,
                 defStyleAttr, R.style.Switcher);
-
-        switchElevation = typedArray.getDimension(R.styleable.Switcher_android_elevation, 0f);
 
         onColor = typedArray.getColor(R.styleable.Switcher_switcher_on_color, 0);
         offColor = typedArray.getColor(R.styleable.Switcher_switcher_off_color, 0);
@@ -182,31 +161,25 @@ public class CustomSwitchView extends View {
 
         iconHeight = iconRadius * 2f;
 
-        iconRect.set(
+        iconRectSet(iconRect,
                 getWidth() - switcherCornerRadius - iconCollapsedWidth / 2,
                 (getHeight() - iconHeight) / 2f,
                 getWidth() - switcherCornerRadius + iconCollapsedWidth / 2,
-                getHeight() - (getHeight() - iconHeight) / 2f
-        );
+                getHeight() - (getHeight() - iconHeight) / 2f);
 
         if (!checked) {
             iconRect.left = getWidth() - switcherCornerRadius - iconCollapsedWidth / 2 - (iconRadius - iconCollapsedWidth / 2);
             iconRect.right = getWidth() - switcherCornerRadius + iconCollapsedWidth / 2 + (iconRadius - iconCollapsedWidth / 2);
 
-            iconClipRect.set(
+            iconRectSet(iconClipRect,
                     iconRect.centerX() - iconClipRadius,
                     iconRect.centerY() - iconClipRadius,
                     iconRect.centerX() + iconClipRadius,
-                    iconRect.centerY() + iconClipRadius
-            );
+                    iconRect.centerY() + iconClipRadius);
 
             iconTranslateX = -(getWidth() - switcherCornerRadius * 2);
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            setOutlineProvider(new SwitchOutline(w, h));
-            setElevation(switchElevation);
-        }
     }
 
     @Override
@@ -254,7 +227,6 @@ public class CustomSwitchView extends View {
         float newProgress = 1f;
 
         if (!checked) {
-
             iconTranslateA = iconTranslateB;
             iconTranslateB = 0f;
             newProgress = 0f;
@@ -303,8 +275,6 @@ public class CustomSwitchView extends View {
         });
         translateAnimator.setDuration(TRANSLATE_ANIMATION_DURATION);
 
-
-        int toColor;
         if (!checked) {
             toColor = onColor;
         } else {
@@ -354,38 +324,14 @@ public class CustomSwitchView extends View {
         animatorSet.start();
     }
 
-    public void setChecked(boolean checked) {
-        if (this.checked != checked) {
-            this.checked = checked;
-            animateSwitch();
-        }
-    }
-
-    public boolean isChecked() {
-        return checked;
-    }
-
     private void forceCheck() {
         currentColor = offColor;
         iconProgress = 1f;
     }
 
-    public OnCheckedChangedListener getOnCheckedChangedListener() {
-        return onCheckedChangedListener;
-    }
-
     public void setOnCheckedChangedListener(OnCheckedChangedListener onCheckedChangedListener) {
         this.onCheckedChangedListener = onCheckedChangedListener;
     }
-
-    public float getOnClickRadiusOffset() {
-        return onClickRadiusOffset;
-    }
-
-    public interface OnCheckedChangedListener {
-        void onCheckedChanged(boolean checked);
-    }
-
 
     @Override
     protected Parcelable onSaveInstanceState() {
@@ -405,24 +351,8 @@ public class CustomSwitchView extends View {
         }
     }
 
-    @Override
-    public ViewOutlineProvider getOutlineProvider() {
-        return new SwitchOutline(getWidth(), getHeight());
+    private void iconRectSet(RectF icon, float left, float top, float right, float bottom) {
+        icon.set(left, top, right, bottom);
     }
 
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    private class SwitchOutline extends ViewOutlineProvider {
-        private int width;
-        private int height;
-
-        public SwitchOutline(int width, int height) {
-            this.width = width;
-            this.height = height;
-        }
-
-        @Override
-        public void getOutline(View view, Outline outline) {
-            outline.setRoundRect(0, 0, width, height, switcherCornerRadius);
-        }
-    }
 }

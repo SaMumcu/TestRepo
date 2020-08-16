@@ -4,6 +4,7 @@
     <dimen name="photo_count">12sp</dimen>
     <dimen name="small_padding">4dp</dimen>
     <dimen name="medium_padding">8dp</dimen>
+    <dimen name="medium_margin">8dp</dimen>
     <dimen name="card_layout">180dp</dimen>
     <dimen name="large_padding">12dp</dimen>
     <dimen name="big_text">40sp</dimen>
@@ -12,4 +13,6 @@
     <dimen name="switcher_elevation">4dp</dimen>
     <dimen name="switcher_height">26dp</dimen>
     <dimen name="switcher_width">46dp</dimen>
+    <dimen name="switch_w">70dp</dimen>
+    <dimen name="switch_h">30dp</dimen>
 </resources>
